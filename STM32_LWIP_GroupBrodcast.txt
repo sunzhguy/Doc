@@ -1,95 +1,280 @@
+不知怎样编辑这个题目才能吸引更多高手过来，希望管理人员能帮忙编辑一下，谢谢
 
-      STM32F103ZET6(144pin)
-管脚序号   管脚名称       默认服用功能   
-//////////////////地址线  
-   10		 PF0           FSMC_A0
-   11		 PF1		   FSMC_A1
-   12		 PF2		   FSMC_A2
-   13	     PF3           FSMC_A3
-   14		 PF4		   FSMC_A4
-   15		 PF5		   FSMC_A5
-   50		 PF12		   FSMC_A6
-   53		 PF13		   FSMC_A7
-   54		 PF14		   FSMC_A8
-   55		 PF15		   FSMC_A9
-   56        PG0           FSMC_A10
-   57		 PG1           FSMC_A11
-   87        PG2		   FSMC_A12
-   88		 PG3		   FSMC_A13
-   89		 PG4           FMSC_A14
-   90        PG5		   FMSC_A15 
-   80        PD11		   FSMC_A16
-   81	     PD12          FSMC_A17
-   82        PD13          FSMC_A18  
-   2         PE3           FSMC_A19
-   3         PE4           FSMC_A20
-   4         PE5     	   FSMC_A21
-   5 		 PE6   		   FSMC_A22
-   1         PE2           FSMC_A23 
-   128		 PG13          FSMC_A24--------------X
-   129		 PG14          FSMC_A25--------------X
-   ADDR[0..23]-----------------------------------------------16M byte SARAM /NORFALSH
- //////////////数据线
-   85		 PD14		   FSMC_D0
-   86		 PD15 		   FSMC_D1
-   114		 PD0		   FSMC_D2
-   115		 PD1           FSMC_D3
-   58		 PE7		   FSMC_D4
-   59 		 PE8           FSMC_D5
-   60		 PE9		   FSMC_D6
-   63		 PE10		   FSMC_D7
-   64	     PE11		   FSMC_D8
-   65        PE12          FSMC_D9
-   66        PE13		   FSMC_D10
-   67		 PE14		   FSMC_D11
-   68		 PE15          FMSC_D12
-   77		 PD8		   FSMC_D13
-   78        PD9		   FSMC_D14
-   79        PD10		   FSMC_D15
-   
-   127		 PG12          FSMC_NE4              X
-   125       PG10          FSMC_NE3/FSMC_NCE4_1  X
-   124       PG9           FSMC_NE2/FSMC_NCE3    X
-   141       PE0           FSMC_NBL0             X      }Nor/psram 信号
-   142       PE1           FSMC_NBL1             X
-   117		 PD3           FSMC_CLK              X
-   
-   
-   123       PD7		   FSMC_NE1/FSMC_NCE2          ---CS 片选
-   118       PD4		   FSMC_NOE                    -----输出使能
-   119		 PD5		   FSMC_NWE                    ---- 写使能          }公用信号
-   122		 PD6		   FSMC_NWAIT
-   
-   18		 PF6		   FSMC_NIORD
-   19 		 PF7		   FSMC_NREG
-   20 		 PF8		   FSMC_NIOWR
-   21		 PF9		   FSMC_CD
-   22		 PF10		   FSMC_INTR
-   49		 PF11		   FSMC_NIOS16
-   91        PG6           FSMC_INT2
-   92        PG7           FSMC_INT3
-   126		 PG11          FSMC_NCE4_2
+单片机型号：STM32F407
+网口芯片：DP83848
+lwip版本：v1.3.2
+
+本地IP为：192.168.0.50，与组播共用端口5568
 
 
-  
-   不论外部接8位/16位宽设备-FSMC_A[0]永远接在外部设备地址A[0]上 ？？这该怎么理解 ---没弄清楚
-这个就是说，FSMC_A0，永远接你设备的A0。
+我做过的修改如下所示：
+1、 在opt.h文件中，将
+#define LWIP_IGMP                       0
+改为
+#define LWIP_IGMP                       1
+即打开IGMP功能
+到论坛上搜 lwip与IGMP搜不到任何信息
+2、在ethernetif.c文件中，将语句
+netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_LINK_UP;
+改为
+netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_LINK_UP | NETIF_FLAG_IGMP; //添加IGMP标志
 
-其 中 HADDR[25:0] 来自外部存储器地址FSMC_A[25:0]，而 HADDR[26:27]对 4 个区进行寻址。？？
+3、添加igmp_tmr()函数的调用
+在 netconf.c文件靠前的位置添加变量，大约在该文件的第70行左右，代码如下所示。
 
-HADDR[27:26]   00       :存储块1  NOR/PSRAM1
-			   01       :存储块1  NOR/PSRAM2
-			   10       :存储块1  NOR/PSRAM3
-			   11       :存储块1  NOR/PSRAM4	
-			   
- HADDR不是地址线吗？总共才26条，那HADDR[26:27]是怎么回事呢？
-FSMC有4个片选，就是用HADDR[26:27]来决定使用哪个片选的，顾HADDR[26:27]，是内部用作片选选择的控制，而不是直接引出给外部用的地址线。
-   
-   
-   
-   
-   
-   
-   
-   
-   
+#ifdef LWIP_IGMP
+uint32_t  IGMPTimer=0;
+#endif
+
+然后在该文件的#ifdef USE_DHCP前面，大约在第180行的位置添加igmp计时器调用代码：
+#if LWIP_IGMP
+if(localtime-IGMPTimer>=IGMP_TMR_INTERVAL)
+  {
+IGMPTimer=localtime;
+    igmp_tmr();
+  }
+#endif
+
+4、UDP初始化
+void UDP_sACN_Init(void)
+{
+        struct udp_pcb *pcb;
+       
+        #if LWIP_IGMP
+        struct ip_addr ipgroup;
+        IP4_ADDR(&ipgroup,230,0,0,11);
+        igmp_joingroup(IP_ADDR_ANY,(struct ip_addr *)(&ipgroup));
+        #endif
+       
+        pcb = udp_new();                                                               
+        udp_bind(pcb,IP_ADDR_ANY,5568);
+       
+        udp_recv(pcb,udp_sACN_recv,NULL);
+}
+编译下载，运行
+PC软件发送数据，抓包软件也监听到了数据，但单片机没接收到数据
+
+
+再关闭以太网的MAC滤波功能，代码更改如下所示：
+ETH_InitStruct->ETH_MulticastFramesFilter = ETH_MulticastFramesFilter_Perfect;
+改为
+ETH_InitStruct->ETH_MulticastFramesFilter = ETH_MulticastFramesFilter_None;
+编译下载，运行
+PC软件发送数据，抓包软件也监听到了数据，但单片机还是没接收到数据
+
+
+
+再分配多一个65000的端口，来实现接收
+更改UDP初始化代码
+void UDP_sACN_Init(void)
+{
+        struct udp_pcb *pcb;
+       
+        #if LWIP_IGMP
+        struct ip_addr ipgroup;
+        IP4_ADDR(&ipgroup,230,0,0,11);
+        igmp_joingroup(IP_ADDR_ANY,(struct ip_addr *)(&ipgroup));
+        #endif
+       
+        pcb = udp_new();                                                               
+        udp_bind(pcb,IP_ADDR_ANY,5568);             
+        udp_bind(pcb,IP_ADDR_ANY,65000);
+       
+        udp_recv(pcb,udp_sACN_recv,NULL);
+}
+
+编译下载，运行
+
+单片机也没接收到数据
+
+
+
+
+
+
+
+使用了RT-Thread操作系统。定义了RT_LWIP_IGMP，并且将LWIP_IGMP的值定义为1.
+然后根据这个贴子http://lists.gnu.org/archive/htm ... 10-07/msg00100.html作者的代码。
+
+IP4_ADDR(&ipMultiCast, 224, 0, 0, 0);
+
+udp_conn = netconn_new(NETCONN_UDP);
+
+netconn_bind(udp_conn, &ipMultiCast, 5004);
+                               
+netconn_join_leave_group(udp_conn,&ipMultiCast,IP_ADDR_ANY,NETCONN_JOIN);
+
+netconn_recv(udp_conn, &inbuf);
+
+然后我用VLC UDP组播向IP为224.0.0.0 端口5004发送UDP包，板子无法接收到数据。
+我看上述帖子中收不到包的原因是netconn_join_leave_group返回-9 (ERR_VAL)。但我的netconn_join_leave_group返回值是0，那应该是加入组成功了吧。为何会收不到数据，是不是我lwip初始化过程中少了什么？求做过组播的高手指点一下，给点参考程序和文档也行，组播相关的好难找。
+
+
+已经成功收到组播数据了。网上相关资料比较少，我把我的方法分享给大家。
+1.首先1楼所写的代码没有任何问题，一定要确保netconn_join_leave_group返回值为0，保证成功加入组。
+2.若返回值不为0，查看NETIF_FLAG_IGMP该项是否定义，NETIF_FLAG_IGMP在netif.h中#define NETIF_FLAG_IGMP         0x80U
+3.说上述步骤没有问题却依然收不到数据，查看ethernet.c文件中rt_stm32_eth_init函数。其中有定义组播屏蔽
+ETH_InitStructure.ETH_MulticastFramesFilter = ETH_MulticastFramesFilter_Perfect;
+这是完全屏蔽，就是因为这个，我收不到组播数据。将其改为ETH_MulticastFramesFilter_None不屏蔽，这样就收到组播数据了。
+以上便是我调通组播的步骤，希望能帮到做组播的朋友。
+
+
+[lwip-users] Problem doing UDP multicast receive using netconn API
+From:	David K Squires
+Subject:	[lwip-users] Problem doing UDP multicast receive using netconn API
+Date:	Fri, 30 Jul 2010 17:51:10 -0400
+Dear Group Members,
+
+ 
+
+I am struggling to try to receive UDP multicast messages with the Atmel UC3A lwip 1.3.2 port.
+
+ 
+
+I have been successfully sending UDP multicast packets with lwip for a couple of years using the netconn API. But now I need to receive them in a different FreeRTOS task.
+
+ 
+
+Here are the particulars:               Multicast Group Address = 224.0.0.0, destination UDP port = 55555
+
+ 
+
+I've enabled the IGMP code in lwip and everything builds fine. I have coded up several attempts to set up to receive UDP multicast packets for the above group and port as follows:
+
+ 
+
+=============================== Code snippet ================================================
+
+(other includes here)
+
+ 
+
+/* lwIP includes. */
+
+#include "lwip/api.h"
+
+#include "lwip/memp.h"
+
+#include "lwip/inet.h"
+
+#include "lwip/ip_addr.h"
+
+#include "lwip/udp.h"
+
+ 
+
+(other includes here)
+
+ 
+
+my_task_function()
+
+{
+
+   struct ip_addr s_mcast_ip_addr;           // MCAST IP Address
+
+   struct netconn *conn;
+
+   int lwip_status;
+
+   err_t err;
+
+ 
+
+   /* Multicast Group IP address bytes are specified in MS to LS order here */
+
+   /* The group address is 224.0.0.0 */
+
+   IP4_ADDR(&s_mcast_ip_addr,(NetConfig_s.udp_mcast_group_addr.addr >> 24) & 0xff,
+
+                                                    (NetConfig_s.udp_mcast_group_addr.addr >> 16) & 0xff,
+
+                                                    (NetConfig_s.udp_mcast_group_addr.addr >>  8) & 0xff,
+
+                                                    (NetConfig_s.udp_mcast_group_addr.addr & 0xff));
+
+               
+
+    // Create a new UDP connection
+
+   conn = netconn_new(NETCONN_UDP);
+
+ 
+
+   // Note: the above call returns a valid pointer (non-zero)
+
+               
+
+    // Bind to the multicast group address 224.0.0.0 and UDP port 55555  (is this call needed??)
+
+    // lwip_status = netconn_bind(conn, &s_mcast_ip_addr, NetConfig_s.udp_dest_port);
+
+               
+
+   // Allow packets from ANY remote host on any port. Is this call needed?????
+
+   // I suspect this call is not needed for UDP
+
+   // netconn_connect(conn, &s_remote_ip_addr, 0);                      //  what do we use for "Any UDP Port?"
+
+               
+
+   err = netconn_join_leave_group (conn,                                             // netconn *
+
+                                                          &s_mcast_ip_addr,                              // Multicast Group Address (32-bits: 224.0.0.0)
+
+                                                          &NetConfig_s.ip_addr,       // Local interface IP address = 192.168.1.21
+
+                                                          NETCONN_JOIN);                  // We want to join this multicast group
+
+ 
+
+=============================================================================================
+
+The code from which this snippet was taken compiles fine with no errors or warnings.
+
+ 
+
+The problem seems to be in the netconn_join_leave_group function call. It returns err = -9 (ERR_VAL).
+
+ 
+
+The first parameter, conn, is non-zero, indicating a reasonable, initialized struct netconn  pointer.
+
+ 
+
+The second parameter has been checked and really is 224.0.0.0.
+
+ 
+
+The third parameter is a pointer to struct ip_addr which is initialized with the IP address of our local Ethernet interface.
+
+ 
+
+As you can see, I've commented out calls to the netconn_bind and netconn_connect functions; it's not clear whether or not these are necessary.
+
+ 
+
+Examples of using this function seem to be non-existent, hence my decision to post  a humble cry for help on the lwip forum.
+
+ 
+
+Incidentally, I've patched the Atmel UC3A MACB driver to allow all broadcast and multicast packets to be passed to lwip. However, I am not yet to the point where this matters, given the above error scenario.
+
+ 
+
+Any help would be greatly appreciated.
+
+ 
+
+Thanks,
+
+ 
+
+Dave Squires
+
+ 
+
+
+
+-----------------------------------
