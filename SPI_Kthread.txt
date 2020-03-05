@@ -1,0 +1,18 @@
+
+
+top –p 线程号
+
+可以使用下面命令来查找线程号：
+
+ps aux|grep 线程名
+
+可以用下面的命令显示所有内核线程：
+
+ps afx
+
+kthread_create
+
+wake_up_process
+kthread_stop
+
+while(!kthread_should_stop())
