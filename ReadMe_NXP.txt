@@ -89,6 +89,46 @@ seveenv
 
 
 
+添加SPI 驱动到内核源码
+diff --git a/arch/arm/boot/dts/myimx6ek140p-iomuxc.dtsi b/arch/arm/boot/dts/myimx6ek140p-iomuxc.dtsi
+index c3296ab..966a2fa 100755
+--- a/arch/arm/boot/dts/myimx6ek140p-iomuxc.dtsi
++++ b/arch/arm/boot/dts/myimx6ek140p-iomuxc.dtsi
+@@ -24,7 +24,7 @@
+         };
+        pinctrl_myspi1_m4_irq: spi_irq_gpio1_14_grp {                                    //IOMUXC_SW_PAD_CTL_PAD_J
+             fsl,pins = <                                                                //
+-                MX6UL_PAD_JTAG_TCK__GPIO1_IO14                 0xf080          // M4--JCK SAI2
++                MX6UL_PAD_JTAG_TCK__GPIO1_IO14                 0xf080          // M14--JCK SAI2
+             >;                                                                                             //
+         };                                                                                                 //
+         pinctrl_csi_i2c1: csi_i2c1_grp {
+diff --git a/drivers/spi/Kconfig b/drivers/spi/Kconfig
+index 72b0590..ce9225b 100644
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
+@@ -651,7 +651,11 @@ config SPI_SPIDEV
+
+          Note that this application programming interface is EXPERIMENTAL
+          and hence SUBJECT TO CHANGE WITHOUT NOTICE while it stabilizes.
+-
++#config SPI_MYSPI_M4
++#      tristate "MYSPI M4 device driver support"
++#      help
++#        This supports SPI1 SPI2 for M4 SPI protocol drivers.
++source "drivers/spi/myspi_m4/Kconfig"
+diff --git a/drivers/spi/Makefile b/drivers/spi/Makefile
+index d8cbf65..ed8fbf7 100644
+--- a/drivers/spi/Makefile
++++ b/drivers/spi/Makefile
+@@ -8,7 +8,9 @@ ccflags-$(CONFIG_SPI_DEBUG) := -DDEBUG
+ # config declarations into driver model code
+ obj-$(CONFIG_SPI_MASTER)               += spi.o
+ obj-$(CONFIG_SPI_SPIDEV)               += spidev.o
++#obj-$(CONFIG_SPI_MYSPI_M4)            += spim4.o
++#spim4-objs                              :=spi_m4.o lkj_pro.o
++obj-$(CONFIG_SPI_MYSPI_M4)             += myspi_m4/
+
 
 
 

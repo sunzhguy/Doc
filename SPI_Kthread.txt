@@ -16,3 +16,11 @@ wake_up_process
 kthread_stop
 
 while(!kthread_should_stop())
+
+
+
+wait_event(wq, condition)                                          //等待事件,不可中断   
+wait_event_interruptible(wq, condition)                         //等待事件,可中断         
+wait_event_timeout(wq, condition, timeout)                      //超时等待,不可中断  
+wait_event_interruptible_timeout(wq, condition, timeout)        //超时等待,可中断
+wake_up_interruptible(WQ)
