@@ -1,4 +1,4 @@
-
+﻿
 
 top –p 线程号
 
@@ -24,3 +24,7 @@ wait_event_interruptible(wq, condition)                    �
 wait_event_timeout(wq, condition, timeout)                      //超时等待,不可中断  
 wait_event_interruptible_timeout(wq, condition, timeout)        //超时等待,可中断
 wake_up_interruptible(WQ)
+
+
+enable_irq() 
+使能中断 disable_irq()
