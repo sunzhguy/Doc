@@ -55,10 +55,10 @@
    117		 PD3           FSMC_CLK              X
    
    
-   123     PD7		   FSMC_NE1/FSMC_NCE2          ---CS 片选
-   118     PD4		   FSMC_NOE                    -----输出使能
-   119		 PD5		   FSMC_NWE                    ---- 写使能          }公用信号
-   122		 PD6		   FSMC_NWAIT
+   123     PD7		   FSMC_NE1/FSMC_NCE2          ---CS 片选     CS0
+   118     PD4		   FSMC_NOE                    -----输出使能  FB_OE 读信号
+   119		 PD5		   FSMC_NWE                    ---- 写使能          }公用信号  FB_RW
+   122		 PD6		   FSMC_NWAIT                                  ALE
    
    18		   PF6		   FSMC_NIORD
    19 		 PF7		   FSMC_NREG
